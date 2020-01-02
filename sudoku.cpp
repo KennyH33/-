@@ -8,9 +8,12 @@
 #include <fstream>
 #include <istream>
 #include <algorithm>
+#include <vector> 
+#include <string.h>
 using namespace std;
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 int result[9999999][9];//结果生成的数独终局 
+char inputsudoku[99999999];
 int sudoku[9][9];//基本数独 
 void makesudoku(int num)
 {
@@ -54,8 +57,8 @@ void makesudoku(int num)
 }
 void makesudokutofile(int num)
 {	
-	ofstream OpenFile("sudoku.txt");
-	if(OpenFile.fail())
+	ofstream WriteFile("sudoku.txt");
+	if(WriteFile.fail())
 	{
 		printf("创建数独文件失败\n");
 		return;	
@@ -67,27 +70,111 @@ void makesudokutofile(int num)
 		{
 			for(j=0;j<9;j++)
 			{	
-				OpenFile<<(result[n*9+i][j]);
+				WriteFile<<(result[n*9+i][j]);
 				if(j==8)
 				{
-					OpenFile<<("\n");
+					WriteFile<<("\n");
 				}
 				else 
 				{
-					OpenFile<<(" ");
+					WriteFile<<(" ");
 				}
 			}
 		}
-		OpenFile<<("\n");
+		WriteFile<<("\n");
 	}
 	printf("sudoku.txt已成功生成");
 }
-void solve()
-{
+bool isright(int k,int row, int column,int num)
+{	int i,j;
+	for(i=0;i<9;i++)
+	{
+		if(result[k*9+i][column]==num)
+		{
+			return false;
+		}
+	}
+	for(j=0;j<9;j++)
+	{
+		if(result[k*9+row][j]==num)
+		{
+			return false;
+		}
+	}
+	for(i=row/3*3;i<=row/3*3+2;i++)
+	{
+		for(j=column/3*3;j<=column/3*3+2;j++)
+		{
+			if(result[k*9+i][j]==num)
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+bool dfs(int k,int row ,int column)
+{	int num;
+	if(column==9)
+	{
+		if(row==8)
+		{
+			return true;
+		}
+		row++;
+		column=0;
+	}
+	if(result[k*9+row][column]!=0)
+	{
+		return dfs(k,row,column+1);
+	}
+	for(num=1;num<=9;num++)
+	{
+		if(isright(k,row,column,num)==true)
+		{
+			result[k*9+row][column]=num;
+			if(dfs(k,row,column+1))
+			{
+				return true;
+			}
+		}
+	}
+	result[k*9+row][column]=0;
+	return false;
+}
+void solvesudoku(string filepath)
+{	int i=0,j=0,temp=0,n=0,k=0;
+	ifstream ReadFile;
+	ReadFile.open(filepath.c_str());
+	if(ReadFile.is_open()==FALSE)
+	{	
+		printf("读取数独文件失败，请检查你的文件路径是否正确\n");	
+	} 
+	while(!ReadFile.eof())
+	{
+		ReadFile>>inputsudoku[n];
+		n++;
+	}
+	n=n/9;
+	memset(result,0,sizeof(result));
+	for (i=0;i<n;i++)
+	{
+		for(j=0;j<9;j++)
+		{
+			result[i][j]=inputsudoku[temp]-'0';
+			temp++;
+		}
+	}
+	n=n/9;
+	for(k=0;k<n;k++)
+	{
+		dfs(k,0,0);
+	}
+	makesudokutofile(n);
 	return;
 }
 int main(int argc, char** argv) 
-{
+{	
 if(argc<3)
 	{	
 		printf("参数过少\n");
@@ -115,9 +202,8 @@ if(argc<3)
 		return 0;
 	}
 	if(strcmp(argv[1],"-s")==0)
-	{
-			
-		solve()	;
+	{	
+		solvesudoku(argv[2]);
 	}
 		return 0;
 

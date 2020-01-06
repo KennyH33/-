@@ -12,12 +12,50 @@
 #include <string.h>
 using namespace std;
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
-int result[9999999][9];//结果生成的数独终局 
 char inputsudoku[99999999];
+int result[9999999][9];//结果生成的数独终局 
+class sudoku
+{private:
 int sudoku[9][9];//基本数独 
-void makesudoku(int num)
-{
-	memset(result,0,sizeof(result));
+public:
+void makesudoku(int num);
+void makesudokutofile(int num);
+bool isright(int k,int row, int column,int num);
+bool dfs(int k,int row ,int column);
+void solvesudoku(string filepath);
+}; 
+void sudoku::makesudokutofile(int num)
+{	
+	ofstream WriteFile("sudoku.txt");
+	if(WriteFile.fail())
+	{
+		printf("创建数独文件失败\n");
+		return;	
+	}
+	int n,i,j;
+	for(n=0;n<num;n++)
+	{	
+		for(i=0;i<9;i++)
+		{
+			for(j=0;j<9;j++)
+			{	
+				WriteFile<<(result[n*9+i][j]);
+				if(j==8)
+				{
+					WriteFile<<("\n");
+				}
+				else 
+				{
+					WriteFile<<(" ");
+				}
+			}
+		}
+		WriteFile<<("\n");
+	}
+	printf("sudoku.txt已成功生成");
+}
+void sudoku:: makesudoku(int num)
+{   memset(result,0,sizeof(result));
 	int curnum=0;//现已经生成的数独个数 
 	int i,j;
 	int firstline[9]={2,3,4,5,6,7,8,9,1};//基本数独的第一行，第一个数位(0+1)%9+1=2 
@@ -55,53 +93,23 @@ void makesudoku(int num)
 		}while(next_permutation(swap+6,swap+9));
 	}while(next_permutation(firstline+1,firstline+9));
 }
-void makesudokutofile(int num)
-{	
-	ofstream WriteFile("sudoku.txt");
-	if(WriteFile.fail())
-	{
-		printf("创建数独文件失败\n");
-		return;	
-	}
-	int n,i,j;
-	for(n=0;n<num;n++)
-	{	
-		for(i=0;i<9;i++)
-		{
-			for(j=0;j<9;j++)
-			{	
-				WriteFile<<(result[n*9+i][j]);
-				if(j==8)
-				{
-					WriteFile<<("\n");
-				}
-				else 
-				{
-					WriteFile<<(" ");
-				}
-			}
-		}
-		WriteFile<<("\n");
-	}
-	printf("sudoku.txt已成功生成");
-}
-bool isright(int k,int row, int column,int num)
+bool sudoku::isright(int k,int row, int column,int num)
 {	int i,j;
-	for(i=0;i<9;i++)
+	for(i=0;i<9;i++)//判断列中有无相同数字 
 	{
 		if(result[k*9+i][column]==num)
 		{
 			return false;
 		}
 	}
-	for(j=0;j<9;j++)
+	for(j=0;j<9;j++)//判断行中有无相同数字 
 	{
 		if(result[k*9+row][j]==num)
 		{
 			return false;
 		}
 	}
-	for(i=row/3*3;i<=row/3*3+2;i++)
+	for(i=row/3*3;i<=row/3*3+2;i++)//判断3*3矩阵中有无相同数字 
 	{
 		for(j=column/3*3;j<=column/3*3+2;j++)
 		{
@@ -113,26 +121,26 @@ bool isright(int k,int row, int column,int num)
 	}
 	return true;
 }
-bool dfs(int k,int row ,int column)
+bool sudoku::dfs(int k,int row ,int column)
 {	int num;
 	if(column==9)
 	{
 		if(row==8)
 		{
-			return true;
+			return true; //搜索结束，条件是行是8，列是9 
 		}
-		row++;
+		row++;//从下一行第一列开始 
 		column=0;
 	}
 	if(result[k*9+row][column]!=0)
 	{
-		return dfs(k,row,column+1);
+		return dfs(k,row,column+1);//如果已经有数字就跳过 
 	}
 	for(num=1;num<=9;num++)
 	{
 		if(isright(k,row,column,num)==true)
 		{
-			result[k*9+row][column]=num;
+			result[k*9+row][column]=num;//如果数字满足条件就先填上，再往后dfs 
 			if(dfs(k,row,column+1))
 			{
 				return true;
@@ -142,7 +150,7 @@ bool dfs(int k,int row ,int column)
 	result[k*9+row][column]=0;
 	return false;
 }
-void solvesudoku(string filepath)
+void sudoku::solvesudoku(string filepath)
 {	int i=0,j=0,temp=0,n=0,k=0;
 	ifstream ReadFile;
 	ReadFile.open(filepath.c_str());
@@ -152,7 +160,7 @@ void solvesudoku(string filepath)
 	} 
 	while(!ReadFile.eof())
 	{
-		ReadFile>>inputsudoku[n];
+		ReadFile>>inputsudoku[n];//读取文件中的字符 
 		n++;
 	}
 	n=n/9;
@@ -161,7 +169,7 @@ void solvesudoku(string filepath)
 	{
 		for(j=0;j<9;j++)
 		{
-			result[i][j]=inputsudoku[temp]-'0';
+			result[i][j]=inputsudoku[temp]-'0';//转换成数字且存进矩阵中 
 			temp++;
 		}
 	}
@@ -174,7 +182,8 @@ void solvesudoku(string filepath)
 	return;
 }
 int main(int argc, char** argv) 
-{	
+{
+sudoku sudo;
 if(argc<3)
 	{	
 		printf("参数过少\n");
@@ -196,14 +205,15 @@ if(argc<3)
 		if(n>1000000)
 		{
 			printf("数独个数不能多于1000000个\n");
+			return 0;
 		}
-		makesudoku(n);
-		makesudokutofile(n); 
+		sudo.makesudoku(n);
+		sudo.makesudokutofile(n);
 		return 0;
 	}
 	if(strcmp(argv[1],"-s")==0)
 	{	
-		solvesudoku(argv[2]);
+		sudo.solvesudoku(argv[2]);
 	}
 		return 0;
 
